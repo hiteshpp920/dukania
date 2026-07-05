@@ -286,7 +286,7 @@ window.adminLogout = function() {
     // Unsubscribe live listeners
     if (unsubProducts) unsubProducts();
     if (unsubCategories) unsubCategories();
-    window.location.reload();
+    window.location.href = "admin.html";
 };
 
 // ── On page load: check if already logged in ──
