@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin — LocalShops</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+        /* LOGIN */
+        .sa-login { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .sa-login-card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 40px; width: 100%; max-width: 380px; text-align: center; }
+        .sa-logo { font-size: 40px; margin-bottom: 12px; }
+        .sa-login-title { font-size: 22px; font-weight: 800; color: #f8fafc; margin-bottom: 4px; }
+        .sa-login-sub { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+        .sa-input { width: 100%; background: #0f172a; border: 1.5px solid #334155; border-radius: 10px; padding: 12px 16px; font-size: 14px; color: #f8fafc; outline: none; margin-bottom: 12px; }
+        .sa-input:focus { border-color: #6366f1; }
+        .sa-btn { width: 100%; background: #6366f1; color: white; border: none; border-radius: 10px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        .sa-btn:hover { background: #4f46e5; }
+        .sa-err { color: #f87171; font-size: 13px; margin-bottom: 10px; display: none; }
+
+        /* DASHBOARD */
+        #saDashboard { display: none; }
+        .sa-header { background: #1e293b; border-bottom: 1px solid #334155; padding: 14px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
+        .sa-header-logo { font-size: 24px; }
+        .sa-header-title { font-size: 17px; font-weight: 800; color: #f8fafc; }
+        .sa-header-sub { font-size: 12px; color: #64748b; }
+        .sa-logout { margin-left: auto; background: transparent; border: 1.5px solid #334155; color: #94a3b8; border-radius: 8px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+        .sa-logout:hover { border-color: #f87171; color: #f87171; }
+
+        .sa-body { padding: 20px; max-width: 960px; margin: 0 auto; }
+
+        /* STATS */
+        .sa-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+        .sa-stat { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 18px; text-align: center; }
+        .sa-stat-num { font-size: 28px; font-weight: 800; color: #6366f1; }
+        .sa-stat-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+        /* ADD SHOP */
+        .sa-section { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .sa-section-title { font-size: 15px; font-weight: 700; color: #f8fafc; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .sa-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .sa-form-group { display: flex; flex-direction: column; gap: 5px; }
+        .sa-form-group label { font-size: 12px; color: #94a3b8; font-weight: 600; }
+        .sa-form-group input, .sa-form-group select { background: #0f172a; border: 1.5px solid #334155; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #f8fafc; outline: none; }
+        .sa-form-group input:focus, .sa-form-group select:focus { border-color: #6366f1; }
+        .sa-add-btn { margin-top: 14px; background: #6366f1; color: white; border: none; border-radius: 10px; padding: 12px 24px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; }
+        .sa-add-btn:hover { background: #4f46e5; }
+
+        /* SHOPS LIST */
+        .shop-card { background: #0f172a; border: 1px solid #334155; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; }
+        .shop-avatar { width: 44px; height: 44px; border-radius: 12px; background: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .shop-info { flex: 1; min-width: 0; }
+        .shop-name { font-size: 15px; font-weight: 700; color: #f8fafc; }
+        .shop-id { font-size: 11px; color: #64748b; font-family: monospace; }
+        .shop-meta { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+        .shop-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+        .badge-active { background: #064e3b; color: #34d399; }
+        .badge-inactive { background: #450a0a; color: #f87171; }
+        .badge-plan { background: #1e1b4b; color: #a5b4fc; }
+        .badge-due { background: #451a03; color: #fb923c; }
+        .shop-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .sa-icon-btn { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; font-size: 13px; cursor: pointer; color: #94a3b8; white-space: nowrap; }
+        .sa-icon-btn:hover { border-color: #6366f1; color: #a5b4fc; }
+        .sa-icon-btn.danger:hover { border-color: #f87171; color: #f87171; }
+
+        /* PLAN CHIPS */
+        .plan-select { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 6px 10px; font-size: 12px; color: #f8fafc; cursor: pointer; outline: none; }
+
+        /* SYNC */
+        .sa-sync { position: fixed; bottom: 20px; right: 20px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 600; display: none; z-index: 999; }
+        .sa-sync.ok  { border-color: #34d399; color: #34d399; }
+        .sa-sync.err { border-color: #f87171; color: #f87171; }
+
+        /* CONFIRM */
+        .sa-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; align-items: center; justify-content: center; padding: 20px; }
+        .sa-modal { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 28px; width: 100%; max-width: 340px; text-align: center; }
+        .sa-modal h3 { font-size: 16px; font-weight: 700; color: #f8fafc; margin: 12px 0 6px; }
+        .sa-modal p { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+        .sa-modal-btns { display: flex; gap: 10px; }
+        .sa-modal-btns button { flex: 1; padding: 11px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; }
+        .btn-yes { background: #ef4444; color: white; }
+        .btn-no  { background: #334155; color: #94a3b8; }
+
+        @media (max-width: 600px) {
+            .sa-stats { grid-template-columns: repeat(3, 1fr); }
+            .sa-form-grid { grid-template-columns: 1fr; }
+            .shop-card { flex-wrap: wrap; }
+            .shop-actions { width: 100%; justify-content: flex-end; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="sa-login" id="saLogin">
+    <div class="sa-login-card">
+        <div class="sa-logo">🛡️</div>
+        <div class="sa-login-title">Super Admin</div>
+        <div class="sa-login-sub">LocalShops Platform • Owner only</div>
+        <div class="sa-err" id="saErr"></div>
+        <div style="position:relative; margin-bottom:12px;">
+            <input type="password" class="sa-input" id="saPass" placeholder="Enter super admin password" onkeydown="if(event.key==='Enter')saLogin()" style="margin-bottom:0; padding-right:44px;">
+            <button type="button" onclick="toggleSaPass()" id="toggleSaBtn" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:18px; color:#64748b;">👁</button>
+        </div>
+        <button class="sa-btn" onclick="saLogin()">Login →</button>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="saDashboard">
+    <div class="sa-header">
+        <div class="sa-header-logo">🛡️</div>
+        <div>
+            <div class="sa-header-title">Super Admin</div>
+            <div class="sa-header-sub">LocalShops Platform</div>
+        </div>
+        <button class="sa-logout" onclick="saLogout()">Logout</button>
+    </div>
+
+    <div class="sa-body">
+        <!-- Stats -->
+        <div class="sa-stats">
+            <div class="sa-stat">
+                <div class="sa-stat-num" id="statTotal">0</div>
+                <div class="sa-stat-label">Total Shops</div>
+            </div>
+            <div class="sa-stat">
+                <div class="sa-stat-num" id="statActive" style="color:#34d399;">0</div>
+                <div class="sa-stat-label">Active</div>
+            </div>
+            <div class="sa-stat">
+                <div class="sa-stat-num" id="statRevenue" style="color:#fb923c;">₹0</div>
+                <div class="sa-stat-label">Monthly</div>
+            </div>
+        </div>
+
+        <!-- Add New Shop -->
+        <div class="sa-section">
+            <div class="sa-section-title">➕ Add New Shop</div>
+            <div class="sa-form-grid">
+                <div class="sa-form-group">
+                    <label>Shop ID (unique, no spaces)</label>
+                    <input type="text" id="newShopId" placeholder="e.g. ram_grocery">
+                </div>
+                <div class="sa-form-group">
+                    <label>Shop Name</label>
+                    <input type="text" id="newShopName" placeholder="e.g. Ram Grocery">
+                </div>
+                <div class="sa-form-group">
+                    <label>Owner Phone</label>
+                    <input type="text" id="newShopPhone" placeholder="9876543210">
+                </div>
+                <div class="sa-form-group">
+                    <label>Admin Password</label>
+                    <input type="text" id="newShopPass" placeholder="e.g. ram2027">
+                </div>
+                <div class="sa-form-group">
+                    <label>Area / Locality</label>
+                    <input type="text" id="newShopArea" placeholder="e.g. Malwani MHADA">
+                </div>
+                <div class="sa-form-group">
+                    <label>Plan</label>
+                    <select id="newShopPlan">
+                        <option value="Basic">₹100/month</option>
+                    </select>
+                </div>
+            </div>
+            <button class="sa-add-btn" id="addShopBtn" onclick="addShop()">➕ Create Shop</button>
+        </div>
+
+        <!-- All Shops -->
+        <div class="sa-section">
+            <div class="sa-section-title">🏪 All Shops</div>
+            <div id="shopsList"><p style="color:#64748b; text-align:center; padding:20px;">Loading shops... ⏳</p></div>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT SHOP MODAL -->
+<div class="sa-overlay" id="saEditModal">
+    <div class="sa-modal" style="max-width:460px; text-align:left;">
+        <div style="font-size:24px; margin-bottom:8px;">✏️ Edit Shop</div>
+        <input type="hidden" id="editShopId">
+        <div class="sa-form-grid" style="margin-bottom:10px;">
+            <div class="sa-form-group">
+                <label>Shop Name</label>
+                <input type="text" id="editShopName" placeholder="Shop name">
+            </div>
+            <div class="sa-form-group">
+                <label>Owner Phone</label>
+                <input type="text" id="editShopPhone" placeholder="9876543210">
+            </div>
+            <div class="sa-form-group">
+                <label>Area / Locality</label>
+                <input type="text" id="editShopArea" placeholder="e.g. Malwani MHADA">
+            </div>
+            <div class="sa-form-group">
+                <label>Admin Password</label>
+                <div style="position:relative;">
+                    <input type="password" id="editShopPass" placeholder="New password" style="width:100%; padding-right:36px;">
+                    <button type="button" onclick="toggleEditPass()" id="toggleEditPassBtn" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:16px; color:#64748b;">👁</button>
+                </div>
+            </div>
+            <div class="sa-form-group">
+                <label>Due Date</label>
+                <input type="text" id="editShopDue" placeholder="e.g. 28/7/2026">
+            </div>
+            <div class="sa-form-group">
+                <label>Hero Title</label>
+                <input type="text" id="editShopHero" placeholder="Welcome to Shop">
+            </div>
+        </div>
+        <div class="sa-modal-btns" style="margin-top:16px;">
+            <button class="btn-yes" style="background:#6366f1;" onclick="saveEditShop()">💾 Save</button>
+            <button class="btn-no" onclick="closeEditShop()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="sa-overlay" id="saConfirm">
+    <div class="sa-modal">
+        <div style="font-size:36px;" id="saConfirmIcon"></div>
+        <h3 id="saConfirmTitle"></h3>
+        <p id="saConfirmMsg"></p>
+        <div class="sa-modal-btns">
+            <button class="btn-yes" id="saConfirmYes">Yes</button>
+            <button class="btn-no" onclick="closeConfirm()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- SYNC TOAST -->
+<div class="sa-sync" id="saSync"></div>
+
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+    getFirestore, collection, doc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBNzmn50gpDY6ww3oAGnNnhs_cqGKmVhCk",
+    authDomain: "chiragstationary-ba728.firebaseapp.com",
+    projectId: "chiragstationary-ba728",
+    storageBucket: "chiragstationary-ba728.firebasestorage.app",
+    messagingSenderId: "647593953948",
+    appId: "1:647593953948:web:b121ee278cd880e306bb59"
+};
+
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── Super Admin password — change this to your own secret ──
+const SA_PASS = "superadmin2027";
+
+const PLAN_PRICES = { "Basic": 100, "Standard": 100, "Premium": 100 };
+
+// ── AUTH ──
+window.toggleSaPass = function() {
+    const input = document.getElementById("saPass");
+    const btn   = document.getElementById("toggleSaBtn");
+    if (input.type === "password") { input.type = "text";     btn.textContent = "🙈"; }
+    else                           { input.type = "password"; btn.textContent = "👁"; }
+};
+
+window.saLogin = function() {
+    const pass = document.getElementById("saPass").value;
+    if (pass !== SA_PASS) {
+        const err = document.getElementById("saErr");
+        err.textContent = "Wrong password!";
+        err.style.display = "block";
+        return;
+    }
+    sessionStorage.setItem("superAdmin", "true");
+    document.getElementById("saLogin").style.display = "none";
+    document.getElementById("saDashboard").style.display = "block";
+    loadShops();
+};
+
+window.saLogout = function() {
+    sessionStorage.removeItem("superAdmin");
+    location.reload();
+};
+
+window.addEventListener("DOMContentLoaded", function() {
+    if (sessionStorage.getItem("superAdmin")) {
+        document.getElementById("saLogin").style.display = "none";
+        document.getElementById("saDashboard").style.display = "block";
+        loadShops();
+    }
+});
+
+// ── LOAD SHOPS ──
+function loadShops() {
+    onSnapshot(collection(db, "shops"), function(snapshot) {
+        const shops = [];
+        snapshot.forEach(function(d) { shops.push({ id: d.id, ...d.data() }); });
+        allShopsCache = shops;
+        renderShops(shops);
+        updateStats(shops);
+    });
+}
+
+function updateStats(shops) {
+    const active  = shops.filter(function(s) { return s.active; }).length;
+    const revenue = shops.filter(function(s) { return s.active; })
+        .reduce(function(sum, s) { return sum + (PLAN_PRICES[s.plan] || 0); }, 0);
+    document.getElementById("statTotal").textContent   = shops.length;
+    document.getElementById("statActive").textContent  = active;
+    document.getElementById("statRevenue").textContent = "₹" + revenue;
+}
+
+function renderShops(shops) {
+    const container = document.getElementById("shopsList");
+    if (shops.length === 0) {
+        container.innerHTML = '<p style="color:#64748b; text-align:center; padding:20px;">No shops yet. Add your first shop above!</p>';
+        return;
+    }
+
+    let html = "";
+    shops.forEach(function(s) {
+        const dueDate = s.dueDate || "Not set";
+        const shopEmoji = s.emoji || "🏪";
+        html +=
+            '<div class="shop-card">' +
+                '<div class="shop-avatar">' + shopEmoji + '</div>' +
+                '<div class="shop-info">' +
+                    '<div class="shop-name">' + (s.name || s.id) + '</div>' +
+                    '<div class="shop-id">ID: ' + s.id + ' • 📞 ' + (s.phone || "N/A") + '</div>' +
+                    '<div class="shop-meta">' +
+                        '<span class="shop-badge ' + (s.active ? 'badge-active' : 'badge-inactive') + '">' + (s.active ? '✅ Active' : '❌ Inactive') + '</span>' +
+                        '<span class="shop-badge badge-plan">💎 ' + (s.plan || "Basic") + '</span>' +
+                        '<span class="shop-badge badge-due">📅 Due: ' + dueDate + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="shop-actions">' +
+                    '<button class="sa-icon-btn" onclick="openShopAdmin(\'' + s.id + '\')">🔧 Admin</button>' +
+                    '<button class="sa-icon-btn" onclick="openEditShop(\'' + s.id + '\')">✏️ Edit</button>' +
+                    '<button class="sa-icon-btn" onclick="toggleShop(\'' + s.id + '\',' + s.active + ')">' + (s.active ? '❌ Disable' : '✅ Enable') + '</button>' +
+                    '<button class="sa-icon-btn danger" onclick="confirmDelete(\'' + s.id + '\')">🗑</button>' +
+                '</div>' +
+            '</div>';
+    });
+    container.innerHTML = html;
+}
+
+// ── ADD SHOP ──
+window.addShop = async function() {
+    const id    = document.getElementById("newShopId").value.trim().toLowerCase().replace(/\s+/g, "_");
+    const name  = document.getElementById("newShopName").value.trim();
+    const phone = document.getElementById("newShopPhone").value.trim();
+    const pass  = document.getElementById("newShopPass").value.trim();
+    const area  = document.getElementById("newShopArea").value.trim();
+    const plan  = document.getElementById("newShopPlan").value;
+
+    if (!id)    { alert("Shop ID required!"); return; }
+    if (!name)  { alert("Shop name required!"); return; }
+    if (!pass)  { alert("Admin password required!"); return; }
+
+    const btn = document.getElementById("addShopBtn");
+    btn.textContent = "⏳ Creating...";
+    btn.disabled = true;
+
+    // Due date = 30 days from today
+    const due = new Date();
+    due.setDate(due.getDate() + 30);
+    const dueDate = due.toLocaleDateString("en-IN");
+
+    try {
+        await setDoc(doc(db, "shops", id), {
+            name, phone, adminPassword: pass,
+            address: area, deliveryArea: area,
+            heroTitle: "Welcome to " + name,
+            tagline: "Fast Delivery • Best Prices",
+            plan, active: true,
+            freeDeliveryAbove: 100,
+            dueDate,
+            createdAt: Date.now()
+        });
+
+        // Clear form
+        ["newShopId","newShopName","newShopPhone","newShopPass","newShopArea"].forEach(function(id) {
+            document.getElementById(id).value = "";
+        });
+
+        showSync("✅ Shop '" + name + "' created!", true);
+    } catch(e) {
+        showSync("❌ Error: " + e.message, false);
+    }
+
+    btn.textContent = "➕ Create Shop";
+    btn.disabled = false;
+};
+
+// ── TOGGLE ACTIVE ──
+window.toggleShop = async function(shopId, currentActive) {
+    await updateDoc(doc(db, "shops", shopId), { active: !currentActive });
+    showSync(currentActive ? "❌ Shop disabled!" : "✅ Shop enabled!", true);
+};
+
+// ── OPEN SHOP ADMIN ──
+window.openShopAdmin = function(shopId) {
+    window.open("admin.html?shop=" + shopId, "_blank");
+};
+
+// ── DELETE SHOP ──
+window.confirmDelete = function(shopId) {
+    showConfirm("🗑", "Delete Shop?", "'" + shopId + "' aur iske saare data permanently delete ho jaayenge.", async function() {
+        await deleteDoc(doc(db, "shops", shopId));
+        showSync("🗑 Shop deleted!", true);
+    });
+};
+
+// ── EDIT SHOP ──
+let allShopsCache = [];
+
+window.openEditShop = function(shopId) {
+    const s = allShopsCache.find(function(x) { return x.id === shopId; });
+    if (!s) return;
+    document.getElementById("editShopId").value    = shopId;
+    document.getElementById("editShopName").value  = s.name  || "";
+    document.getElementById("editShopPhone").value = s.phone || "";
+    document.getElementById("editShopArea").value  = s.deliveryArea || s.address || "";
+    document.getElementById("editShopPass").value  = s.adminPassword || "";
+    document.getElementById("editShopDue").value   = s.dueDate || "";
+    document.getElementById("editShopHero").value  = s.heroTitle || "";
+    document.getElementById("saEditModal").style.display = "flex";
+};
+
+window.closeEditShop = function() {
+    document.getElementById("saEditModal").style.display = "none";
+};
+
+window.saveEditShop = async function() {
+    const shopId = document.getElementById("editShopId").value;
+    const name   = document.getElementById("editShopName").value.trim();
+    const phone  = document.getElementById("editShopPhone").value.trim();
+    const area   = document.getElementById("editShopArea").value.trim();
+    const pass   = document.getElementById("editShopPass").value.trim();
+    const due    = document.getElementById("editShopDue").value.trim();
+    const hero   = document.getElementById("editShopHero").value.trim();
+
+    if (!name) { alert("Shop name required!"); return; }
+
+    const updates = {
+        name, phone,
+        address: area, deliveryArea: area,
+        heroTitle: hero || "Welcome to " + name,
+        dueDate: due
+    };
+    if (pass) updates.adminPassword = pass;
+
+    try {
+        await updateDoc(doc(db, "shops", shopId), updates);
+        closeEditShop();
+        showSync("✅ Shop updated!", true);
+    } catch(e) {
+        showSync("❌ Error: " + e.message, false);
+    }
+};
+
+window.toggleEditPass = function() {
+    const input = document.getElementById("editShopPass");
+    const btn   = document.getElementById("toggleEditPassBtn");
+    if (input.type === "password") { input.type = "text";     btn.textContent = "🙈"; }
+    else                           { input.type = "password"; btn.textContent = "👁"; }
+};
+
+// ── SYNC TOAST ──
+function showSync(msg, ok) {
+    const el = document.getElementById("saSync");
+    el.textContent = msg;
+    el.className   = "sa-sync " + (ok ? "ok" : "err");
+    el.style.display = "block";
+    setTimeout(function() { el.style.display = "none"; }, 3500);
+}
+
+// ── CONFIRM MODAL ──
+function showConfirm(icon, title, msg, onYes) {
+    document.getElementById("saConfirmIcon").textContent  = icon;
+    document.getElementById("saConfirmTitle").textContent = title;
+    document.getElementById("saConfirmMsg").textContent   = msg;
+    document.getElementById("saConfirm").style.display    = "flex";
+    document.getElementById("saConfirmYes").onclick = function() { closeConfirm(); onYes(); };
+}
+window.closeConfirm = function() {
+    document.getElementById("saConfirm").style.display = "none";
+};
+</script>
+</body>
+</html>

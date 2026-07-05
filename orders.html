@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="header-section">
+    <img id="shopLogo" src="logochirag.png" class="logo" alt="Logo">
+    <h1>My Orders</h1>
+    <div style="margin-left:auto; display:flex; gap:10px; align-items:center;">
+        <a id="homeLink" href="index.html" class="header-link">🏠 Shop</a>
+        <button class="header-logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+</div>
+
+<div class="orders-page">
+    <div class="user-card" id="userCard"></div>
+    <div class="orders-header">
+        <h2>📦 Your Orders</h2>
+        <button class="clear-history-btn" onclick="doClearAll()">🗑 Clear All</button>
+    </div>
+    <div id="ordersList"></div>
+</div>
+
+<div class="bottom-nav">
+    <a id="navHome" href="index.html" class="bottom-nav-item"><span>🏠</span><span>Home</span></a>
+    <a id="navShop" href="index.html" class="bottom-nav-item"><span>🛍</span><span>Shop</span></a>
+    <a id="navOrders" href="orders.html" class="bottom-nav-item active"><span>📦</span><span>My Orders</span></a>
+    <a href="#" class="bottom-nav-item" onclick="showProfile(); return false;"><span>👤</span><span>Profile</span></a>
+</div>
+
+<div class="footer" style="margin-bottom:64px;">
+    <p id="footerAddress">📍 Loading...</p>
+    <p id="footerPhone"></p>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:white; border-radius:16px; padding:28px 20px; width:100%; max-width:360px; text-align:center;">
+        <div style="font-size:44px; margin-bottom:12px;" id="confirmIcon"></div>
+        <h3 id="confirmTitle" style="font-size:17px; font-weight:700; color:#1e3a8a; margin-bottom:8px;"></h3>
+        <p id="confirmMsg" style="font-size:14px; color:#6b7280; margin-bottom:24px;"></p>
+        <div style="display:flex; gap:12px;">
+            <button id="confirmYesBtn" style="flex:1; background:#ef4444; color:white; border:none; padding:13px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer;">Yes</button>
+            <button onclick="closeConfirm()" style="flex:1; background:transparent; color:#6b7280; border:1.5px solid #d1d5db; padding:13px; border-radius:10px; font-size:15px; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBNzmn50gpDY6ww3oAGnNnhs_cqGKmVhCk",
+    authDomain: "chiragstationary-ba728.firebaseapp.com",
+    projectId: "chiragstationary-ba728",
+    storageBucket: "chiragstationary-ba728.firebasestorage.app",
+    messagingSenderId: "647593953948",
+    appId: "1:647593953948:web:b121ee278cd880e306bb59"
+};
+
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── shopId from URL ──
+const params   = new URLSearchParams(window.location.search);
+const SHOP_ID  = params.get("shop") || "chirag_stationary";
+const USER_KEY = "user_"    + SHOP_ID;
+const HIST_KEY = "history_" + SHOP_ID;
+
+// Expose for inline onclick handlers
+window.SHOP_ID  = SHOP_ID;
+window.HIST_KEY = HIST_KEY;
+window.USER_KEY = USER_KEY;
+
+let SHOP_PHONE = "";
+let SHOP_NAME  = "Shop";
+
+// ── Fix all nav/home links with shopId ──
+function fixLinks() {
+    const q = "?shop=" + SHOP_ID;
+    document.getElementById("homeLink").href   = "index.html"  + q;
+    document.getElementById("navHome").href    = "index.html"  + q;
+    document.getElementById("navShop").href    = "index.html"  + q;
+    document.getElementById("navOrders").href  = "orders.html" + q;
+}
+
+// ── Load shop meta from Firebase ──
+async function loadShopMeta() {
+    try {
+        const snap = await getDoc(doc(db, "shops", SHOP_ID));
+        if (!snap.exists()) return;
+        const s = snap.data();
+        SHOP_PHONE = s.phone || "";
+        SHOP_NAME  = s.name  || "Shop";
+        document.title = "My Orders — " + SHOP_NAME;
+        if (s.logo) document.getElementById("shopLogo").src = s.logo;
+        document.getElementById("footerAddress").textContent = "📍 " + SHOP_NAME + (s.address ? " • " + s.address : "");
+        if (s.phone) {
+            document.getElementById("footerPhone").innerHTML = '📞 <a href="tel:+91' + s.phone + '">+91 ' + s.phone + '</a>';
+        }
+        // Make cancel WhatsApp use shop's number
+        window.SHOP_PHONE = s.phone || "";
+        window.SHOP_NAME  = s.name  || "Shop";
+    } catch(e) {
+        console.warn("Shop meta failed:", e);
+    }
+}
+
+window.addEventListener("DOMContentLoaded", async function() {
+    // Auth check
+    const userData = localStorage.getItem(USER_KEY);
+    if (!userData) { window.location.href = "login.html?shop=" + SHOP_ID; return; }
+
+    fixLinks();
+    await loadShopMeta();
+
+    // Render user card
+    const user = JSON.parse(userData);
+    document.getElementById("userCard").innerHTML =
+        '<div class="user-info">' +
+            '<div class="user-avatar">' + user.name.charAt(0).toUpperCase() + '</div>' +
+            '<div>' +
+                '<div class="user-name">'    + user.name    + '</div>' +
+                '<div class="user-phone">📞 +91 ' + user.phone + '</div>' +
+                '<div class="user-address">📍 '  + user.address + '</div>' +
+            '</div>' +
+        '</div>';
+
+    renderOrders();
+});
+
+// ── Render orders ──
+window.renderOrders = function() {
+    const container = document.getElementById("ordersList");
+    let history = [];
+    try { const s = localStorage.getItem(HIST_KEY); if (s) history = JSON.parse(s); } catch(e) {}
+
+    if (!history || history.length === 0) {
+        container.innerHTML =
+            '<div class="empty-orders">' +
+                '<div style="font-size:60px;">📦</div>' +
+                '<h3>No orders yet!</h3>' +
+                '<p>Place your first order from our shop</p>' +
+                '<a href="index.html?shop=' + SHOP_ID + '" class="shop-now-btn">Shop Now</a>' +
+            '</div>';
+        return;
+    }
+
+    let html = "";
+    for (let i = 0; i < history.length; i++) {
+        const order       = history[i];
+        const isCancelled = order.status === "Cancelled";
+        const isConfirmed = order.status === "Confirmed";
+
+        let itemsHtml = "";
+        if (order.items) {
+            Object.keys(order.items).forEach(function(item) {
+                itemsHtml +=
+                    '<div class="order-item-row">' +
+                        '<span>' + item + '</span>' +
+                        '<span>x ' + order.items[item].qty + '</span>' +
+                        '<span>₹' + (order.items[item].price * order.items[item].qty) + '</span>' +
+                    '</div>';
+            });
+        }
+
+        const badge = isCancelled
+            ? '<span class="order-badge badge-cancelled">❌ Cancelled</span>'
+            : isConfirmed
+                ? '<span class="order-badge badge-confirmed">✅ Confirmed</span>'
+                : '<span class="order-badge">🕐 Placed</span>';
+
+        const actionBtn = isCancelled
+            ? '<p class="cancelled-note">This order has been cancelled.</p>'
+            : isConfirmed
+                ? '<p class="confirmed-note">✅ Order confirmed!</p>'
+                : '<div class="order-action-btns"><button class="cancel-order-btn" data-id="' + order.id + '">❌ Cancel Order</button></div>';
+
+        html +=
+            '<div class="order-card-full">' +
+                '<div class="order-card-top">' +
+                    '<div>' +
+                        '<div class="order-num">Order #' + String(order.id).slice(-5) + '</div>' +
+                        '<div class="order-date-txt">📅 ' + order.date + '</div>' +
+                    '</div>' +
+                    badge +
+                '</div>' +
+                '<div class="order-items-list">' + itemsHtml + '</div>' +
+                '<div class="order-card-bottom">' +
+                    '<div class="order-totals">' +
+                        '<span>Delivery: ' + (order.delivery > 0 ? '₹' + order.delivery : 'FREE') + '</span>' +
+                        '<span class="order-total-bold">Total: ₹' + order.total + '</span>' +
+                    '</div>' +
+                    '<div class="order-payment">💳 ' + order.payment + '</div>' +
+                '</div>' +
+                actionBtn +
+            '</div>';
+    }
+
+    container.innerHTML = html;
+
+    document.querySelectorAll(".cancel-order-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            cancelOrder(parseInt(this.getAttribute("data-id")));
+        });
+    });
+};
+
+// ── Cancel order — WhatsApp to shop's number ──
+window.cancelOrder = function(orderId) {
+    showConfirm("❌", "Cancel Order?", "Your order will be cancelled.", function() {
+        let history = [];
+        try { const s = localStorage.getItem(HIST_KEY); if (s) history = JSON.parse(s); } catch(e) {}
+        const order = history.find(function(o) { return o.id === orderId; });
+        if (!order) return;
+        order.status = "Cancelled";
+        localStorage.setItem(HIST_KEY, JSON.stringify(history));
+
+        const user = JSON.parse(localStorage.getItem(USER_KEY) || "{}");
+        let msg = "❌ *ORDER CANCELLED*\n\n";
+        msg += "Shop: " + (window.SHOP_NAME || SHOP_ID) + "\n";
+        msg += "Order #" + String(order.id).slice(-5) + "\n";
+        msg += "📅 " + order.date + "\n\n";
+        msg += "👤 *Customer:* " + (user.name  || "N/A") + "\n";
+        msg += "📞 *Phone:* +91 " + (user.phone || "N/A") + "\n\n*Items:*\n";
+        for (let item in order.items) {
+            msg += "• " + item + " x " + order.items[item].qty + "\n";
+        }
+        msg += "\n💰 *Total was: ₹" + order.total + "*";
+        msg += "\n\n⚠️ Please do not process this order.";
+
+        // Send to shop's WhatsApp, not hardcoded number
+        const waNumber = window.SHOP_PHONE ? "91" + window.SHOP_PHONE : "919321737571";
+        window.open("https://wa.me/" + waNumber + "?text=" + encodeURIComponent(msg), "_blank");
+        renderOrders();
+    });
+};
+
+window.doClearAll = function() {
+    showConfirm("🗑", "Clear All?", "All order history will be deleted.", function() {
+        localStorage.removeItem(HIST_KEY);
+        renderOrders();
+    });
+};
+
+window.doLogout = function() {
+    showConfirm("👋", "Logout?", "You will need to login again.", function() {
+        localStorage.removeItem(USER_KEY);
+        window.location.href = "login.html?shop=" + SHOP_ID;
+    });
+};
+
+window.showProfile = function() {
+    const user = JSON.parse(localStorage.getItem(USER_KEY) || "{}");
+    alert("👤 " + user.name + "\n📞 +91 " + user.phone + "\n📍 " + user.address);
+};
+
+window.showConfirm = function(icon, title, msg, onYes) {
+    document.getElementById("confirmIcon").textContent  = icon;
+    document.getElementById("confirmTitle").textContent = title;
+    document.getElementById("confirmMsg").textContent   = msg;
+    document.getElementById("confirmModal").style.display = "flex";
+    document.getElementById("confirmYesBtn").onclick = function() { closeConfirm(); onYes(); };
+};
+
+window.closeConfirm = function() {
+    document.getElementById("confirmModal").style.display = "none";
+};
+
+// local alias for renderOrders called from inline buttons
+function renderOrders() { window.renderOrders(); }
+</script>
+</body>
+</html>

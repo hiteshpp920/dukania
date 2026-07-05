@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- STICKY HEADER -->
+<div class="header-section">
+    <img id="shopLogo" src="logochirag.png" class="logo" alt="Shop Logo">
+    <h1 id="shopHeaderName">Shop</h1>
+    <div class="header-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search products...">
+        <button id="micBtn" class="mic-btn" onclick="startMic()" title="Voice Search">🎤</button>
+    </div>
+    <div id="headerUser" style="margin-left:8px;"></div>
+</div>
+
+<!-- HERO — content filled dynamically from Firebase -->
+<div class="hero">
+    <h1 id="heroTitle">Loading...</h1>
+    <p id="heroSubtitle">Fast Delivery • Best Prices • Trusted Local Store</p>
+    <button class="shop-btn" onclick="document.querySelector('.products-section').scrollIntoView({behavior:'smooth'})">Shop Now</button>
+    <p class="delivery-line" id="heroDelivery">🚚 Same Day Delivery</p>
+    <div class="hero-trust" id="heroTrust">
+        <span>✔ Trusted Store</span>
+        <span>✔ Free Delivery Above ₹100</span>
+        <span>✔ Cash on Delivery</span>
+    </div>
+</div>
+
+<!-- SHOP NOT FOUND / INACTIVE -->
+<div id="shopError" style="display:none; text-align:center; padding:60px 20px;">
+    <div style="font-size:48px; margin-bottom:12px;">🏪</div>
+    <h2 style="color:#1e3a8a; margin-bottom:8px;">Shop not found</h2>
+    <p style="color:#6b7280; font-size:14px;">This shop link is invalid or the shop is currently inactive.</p>
+</div>
+
+<p id="noResult" style="display:none; text-align:center; font-weight:600; color:#e53e3e; margin:10px 0;">No product found 😔</p>
+
+<!-- PRODUCTS -->
+<div class="products-section" style="padding: 0 12px;">
+    <div id="productsLoading" style="text-align:center; padding:40px; color:#6b7280;">
+        <div style="font-size:40px; margin-bottom:10px;">⏳</div>
+        <p style="font-size:15px; font-weight:600;">Loading products...</p>
+    </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+    <a href="#" class="bottom-nav-item active" onclick="scrollToTop(); return false;">
+        <span>🏠</span><span>Home</span>
+    </a>
+    <a href="#" class="bottom-nav-item" onclick="document.querySelector('.products-section').scrollIntoView({behavior:'smooth'}); return false;">
+        <span>🛍</span><span>Shop</span>
+    </a>
+    <a href="#" class="bottom-nav-item" onclick="openCart(); return false;">
+        <span>🛒</span>
+        <span>Cart <span id="navCartCount" style="display:none; background:#ef4444; color:white; border-radius:50%; padding:1px 5px; font-size:10px;"></span></span>
+    </a>
+    <a href="orders.html" class="bottom-nav-item" id="ordersNavLink">
+        <span>📦</span><span>My Orders</span>
+    </a>
+    <a href="#" class="bottom-nav-item" onclick="showProfile(); return false;">
+        <span>👤</span><span>Profile</span>
+    </a>
+</div>
+
+<!-- CART DRAWER -->
+<div id="cartOverlay" class="cart-overlay" onclick="closeCart()"></div>
+<div id="cartDrawer" class="cart-drawer">
+    <div class="cart-drawer-header">
+        <h3>🛒 My Cart</h3>
+        <button class="cart-close-btn" onclick="closeCart()">✕</button>
+    </div>
+    <div id="cartEmpty" class="cart-empty">
+        <div style="font-size:48px;">🛒</div>
+        <p>Your cart is empty</p>
+        <p style="font-size:13px; color:#9ca3af;">Add items to get started!</p>
+    </div>
+    <ul id="cartList"></ul>
+    <div class="cart-summary" id="cartSummaryBox" style="display:none;">
+        <div class="summary-row"><span>Subtotal</span><span>₹<span id="subtotal">0</span></span></div>
+        <div class="summary-row"><span>Delivery</span><span id="deliveryText">₹0</span></div>
+        <div class="summary-row total-row"><span>Total</span><span>₹<span id="total">0</span></span></div>
+        <p class="free-delivery-note" id="freeDeliveryNote" style="display:none;">Add ₹<span id="remaining">100</span> more for FREE delivery!</p>
+    </div>
+    <div id="cartActions" style="display:none;">
+        <button class="place-order-btn" onclick="goToCheckout()">Proceed to Checkout →</button>
+        <button class="clear-cart-btn" onclick="clearCart()">🗑 Clear Cart</button>
+    </div>
+</div>
+
+<!-- CHECKOUT DRAWER -->
+<div id="checkoutOverlay" class="cart-overlay" onclick="closeCheckout()"></div>
+<div id="checkoutDrawer" class="cart-drawer">
+    <div class="cart-drawer-header">
+        <button class="cart-close-btn" onclick="closeCheckout()">←</button>
+        <h3>📋 Checkout</h3>
+        <div></div>
+    </div>
+    <div style="padding: 0 4px;">
+        <h4 style="font-size:14px; color:#6b7280; margin-bottom:12px;">Delivery Details</h4>
+        <input type="text" id="customerName" placeholder="Your Name" class="checkout-input">
+        <input type="text" id="customerPhone" placeholder="Your Phone Number" class="checkout-input">
+        <textarea id="customerAddress" placeholder="Your Delivery Address" rows="3" class="checkout-input" style="resize:none;"></textarea>
+
+        <h4 style="font-size:14px; color:#6b7280; margin: 16px 0 12px;">💳 Payment Method</h4>
+        <label class="radio-label">
+            <input type="radio" name="payment" value="Cash on Delivery" checked>
+            <span>Cash on Delivery</span>
+        </label>
+        <label class="radio-label">
+            <input type="radio" name="payment" value="Online Payment">
+            <span>Pay Online (Later)</span>
+        </label>
+
+        <div class="cart-summary" style="margin-top:16px;">
+            <div class="summary-row"><span>Subtotal</span><span>₹<span id="co-subtotal">0</span></span></div>
+            <div class="summary-row"><span>Delivery</span><span id="co-delivery">₹0</span></div>
+            <div class="summary-row total-row"><span>Total</span><span>₹<span id="co-total">0</span></span></div>
+        </div>
+
+        <button class="place-order-btn" style="margin-top:16px;" onclick="placeOrder()">✅ Place Order on WhatsApp</button>
+    </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div id="profileModal" class="review-modal-overlay" onclick="if(event.target===this)closeProfile()">
+    <div class="review-modal">
+        <h3>👤 My Profile</h3>
+        <div id="profileContent"></div>
+        <div class="modal-btns" style="margin-top:16px;">
+            <button class="modal-submit-btn" onclick="editProfile()">✏️ Edit Info</button>
+            <button class="modal-cancel-btn" onclick="logoutUser()" style="color:#ef4444; border-color:#fca5a5;">Logout</button>
+        </div>
+    </div>
+</div>
+
+<!-- REVIEW MODAL -->
+<div id="reviewModal" class="review-modal-overlay" onclick="if(event.target===this)closeReviewModal()">
+    <div class="review-modal">
+        <h3>⭐ Write a Review</h3>
+        <p class="product-label" id="reviewProductName"></p>
+        <input type="hidden" id="reviewModalProduct">
+        <div class="modal-stars">
+            <span class="modal-star" onclick="setModalStars(1)">★</span>
+            <span class="modal-star" onclick="setModalStars(2)">★</span>
+            <span class="modal-star" onclick="setModalStars(3)">★</span>
+            <span class="modal-star" onclick="setModalStars(4)">★</span>
+            <span class="modal-star" onclick="setModalStars(5)">★</span>
+        </div>
+        <input type="text" id="reviewerName" placeholder="Your name (optional)">
+        <textarea id="reviewText" rows="3" placeholder="Share your experience... (optional)"></textarea>
+        <div class="modal-btns">
+            <button class="modal-submit-btn" onclick="submitReview()">Submit Review</button>
+            <button class="modal-cancel-btn" onclick="closeReviewModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER — filled dynamically -->
+<div class="footer" id="shopFooter" style="margin-bottom:64px;">
+    <p id="footerAddress">📍 Loading...</p>
+    <p id="footerPhone"></p>
+</div>
+
+<!-- WHATSAPP BUTTON — number from Firebase -->
+<a id="whatsappBtn" href="#" class="whatsapp-btn" target="_blank" style="display:none;">💬 WhatsApp</a>
+
+<!-- CONFIRM MODAL -->
+<div id="confirmModal" class="review-modal-overlay" style="display:none;">
+    <div class="review-modal" style="text-align:center;">
+        <div style="font-size:40px; margin-bottom:10px;" id="confirmIcon">🗑</div>
+        <h3 id="confirmTitle" style="margin-bottom:8px;"></h3>
+        <p id="confirmMsg" style="font-size:14px; color:#6b7280; margin-bottom:20px;"></p>
+        <div class="modal-btns">
+            <button class="modal-submit-btn" id="confirmYesBtn" style="background:#ef4444;">Yes</button>
+            <button class="modal-cancel-btn" onclick="closeConfirm()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- IMAGE ZOOM MODAL -->
+<div id="zoomOverlay" class="zoom-overlay" onclick="closeZoom()">
+    <button class="zoom-close" onclick="closeZoom()">✕</button>
+    <img id="zoomImg" src="" alt="Product">
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+    getFirestore, collection, doc, getDoc, onSnapshot, addDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBNzmn50gpDY6ww3oAGnNnhs_cqGKmVhCk",
+    authDomain: "chiragstationary-ba728.firebaseapp.com",
+    projectId: "chiragstationary-ba728",
+    storageBucket: "chiragstationary-ba728.firebasestorage.app",
+    messagingSenderId: "647593953948",
+    appId: "1:647593953948:web:b121ee278cd880e306bb59"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ─────────────────────────────────────────────
+// SHOP ID — read from URL param ?shop=xxx
+// Fallback: "chirag_stationary" (your own shop)
+// Each shop's URL: index.html?shop=chirag_stationary
+// ─────────────────────────────────────────────
+const params  = new URLSearchParams(window.location.search);
+const SHOP_ID = params.get("shop") || "chirag_stationary";
+
+// Expose globally so script.js can use it
+window.SHOP_ID = SHOP_ID;
+window._db     = db;
+
+// ── Collection helpers ──
+function productsCol()   { return collection(db, "shops", SHOP_ID, "products"); }
+function categoriesCol() { return collection(db, "shops", SHOP_ID, "categories"); }
+function ordersCol()     { return collection(db, "shops", SHOP_ID, "orders"); }
+
+// ─────────────────────────────────────────────
+// LOAD SHOP META  — name, logo, whatsapp, hero text
+// ─────────────────────────────────────────────
+async function loadShopMeta() {
+    try {
+        const shopSnap = await getDoc(doc(db, "shops", SHOP_ID));
+
+        if (!shopSnap.exists() || shopSnap.data().active === false) {
+            document.getElementById("shopError").style.display = "block";
+            document.querySelector(".hero").style.display = "none";
+            document.querySelector(".products-section").style.display = "none";
+            return false;
+        }
+
+        const s = shopSnap.data();
+
+        // Header
+        document.title = s.name || "Shop";
+        document.getElementById("shopHeaderName").textContent = s.name || "Shop";
+        if (s.logo) document.getElementById("shopLogo").src = s.logo;
+
+        // Hero
+        document.getElementById("heroTitle").textContent = s.heroTitle || ("Welcome to " + s.name);
+        document.getElementById("heroSubtitle").textContent = s.heroSubtitle || "Fast Delivery • Best Prices • Trusted Local Store";
+        document.getElementById("heroDelivery").textContent = "🚚 " + (s.deliveryArea ? "Same Day Delivery in " + s.deliveryArea : "Same Day Delivery");
+
+        if (s.since || s.freeDeliveryAbove) {
+            let trusts = [];
+            if (s.since) trusts.push("✔ Serving Since " + s.since);
+            trusts.push("✔ Free Delivery Above ₹" + (s.freeDeliveryAbove || 100));
+            trusts.push("✔ Cash on Delivery");
+            document.getElementById("heroTrust").innerHTML = trusts.map(function(t) { return "<span>" + t + "</span>"; }).join("");
+        }
+
+        // Footer
+        document.getElementById("footerAddress").textContent = "📍 " + (s.name || "") + (s.address ? " • " + s.address : "");
+        if (s.phone) {
+            document.getElementById("footerPhone").innerHTML = '📞 <a href="tel:+91' + s.phone + '">+91 ' + s.phone + '</a>';
+        }
+
+        // WhatsApp button
+        if (s.phone) {
+            const wa = document.getElementById("whatsappBtn");
+            wa.href = "https://wa.me/91" + s.phone;
+            wa.style.display = "flex";
+        }
+
+        // Store on window for script.js to use
+        window.SHOP_DATA = s;
+        window.SHOP_PHONE = s.phone || "";
+        window.FREE_DELIVERY_ABOVE = s.freeDeliveryAbove || 100;
+
+        // orders.html link — pass shopId
+        document.getElementById("ordersNavLink").href = "orders.html?shop=" + SHOP_ID;
+
+        return true;
+    } catch(e) {
+        console.error("Shop load error:", e);
+        return false;
+    }
+}
+
+// ─────────────────────────────────────────────
+// LOAD PRODUCTS  (real-time, scoped to shop)
+// ─────────────────────────────────────────────
+function loadProducts() {
+    onSnapshot(productsCol(), function(snapshot) {
+        const products = [];
+        snapshot.forEach(function(d) { products.push({ fid: d.id, ...d.data() }); });
+        document.getElementById("productsLoading").style.display = "none";
+
+        // Hand off to script.js render function
+        if (typeof window.renderProducts === "function") {
+            window.renderProducts(products);
+        }
+    });
+}
+
+// ─────────────────────────────────────────────
+// LOAD CATEGORIES (for filter tabs if needed)
+// ─────────────────────────────────────────────
+function loadCategories() {
+    onSnapshot(categoriesCol(), function(snapshot) {
+        const cats = [];
+        snapshot.forEach(function(d) { cats.push({ id: d.id, ...d.data() }); });
+        window.ALL_CATEGORIES = cats;
+    });
+}
+
+// ─────────────────────────────────────────────
+// PLACE ORDER  — saves to Firestore + WhatsApp
+// ─────────────────────────────────────────────
+window._placeOrderFirebase = async function(orderData) {
+    try {
+        await addDoc(ordersCol(), {
+            ...orderData,
+            shopId: SHOP_ID,
+            createdAt: serverTimestamp()
+        });
+    } catch(e) {
+        console.error("Order save error:", e);
+    }
+};
+
+// ─────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", async function() {
+    const ok = await loadShopMeta();
+    if (!ok) return;
+    loadCategories();
+    loadProducts();
+});
+
+function scrollToTop() { window.scrollTo({ top: 0, behavior: "smooth" }); }
+window.scrollToTop = scrollToTop;
+</script>
+
+<!-- script.js handles cart, checkout, profile, reviews, mic -->
+<script src="script.js"></script>
+</body>
+</html>

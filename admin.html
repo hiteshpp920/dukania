@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="header-section">
+    <img src="logochirag.png" class="logo" alt="Logo">
+    <h1 id="headerShopName">Admin Panel</h1>
+    <div style="margin-left:auto; display:flex; gap:10px; align-items:center;">
+        <a href="index.html" class="header-link">🏠 Shop</a>
+        <button class="header-logout-btn" onclick="adminLogout()">Logout</button>
+    </div>
+</div>
+
+<!-- LOGIN -->
+<div id="adminLoginPage" class="login-page">
+    <div class="login-card">
+        <img src="logochirag.png" class="login-logo" alt="Logo">
+        <h1 class="login-title">Admin Login</h1>
+        <p class="login-sub">Shop owner only 🔐</p>
+        <div class="login-form">
+            <label>Shop ID</label>
+            <input type="text" id="loginShopId" placeholder="e.g. chirag_stationary" style="margin-bottom:10px;">
+            <label>Admin Password</label>
+            <div style="position:relative;">
+                <input type="password" id="adminPass" placeholder="Enter password" style="width:100%; padding-right:44px;">
+                <button type="button" onclick="toggleAdminPass()" id="togglePassBtn" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:18px; color:#6b7280;">👁</button>
+            </div>
+            <div id="loginError" style="display:none; color:#ef4444; font-size:13px; margin-top:6px;"></div>
+            <button class="login-btn" onclick="adminLogin()">Login →</button>
+        </div>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="adminDashboard" style="display:none; padding:16px; max-width:900px; margin:0 auto; padding-bottom:80px;">
+
+    <!-- Shop badge -->
+    <div id="shopBadge" style="display:inline-flex; align-items:center; gap:8px; background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:20px; padding:6px 14px; margin-bottom:14px; font-size:13px; font-weight:600; color:#1e40af;">
+        🏪 <span id="badgeShopName">Your Shop</span>
+        <span style="background:#1e3a8a; color:white; border-radius:10px; padding:2px 8px; font-size:11px;" id="badgePlan">Free</span>
+    </div>
+
+    <div id="syncStatus" style="display:none; text-align:center; padding:12px; margin-bottom:16px; border-radius:10px; font-size:14px; font-weight:600;"></div>
+
+    <div class="admin-stats">
+        <div class="stat-card"><div class="stat-num" id="totalProducts">0</div><div class="stat-label">Products</div></div>
+        <div class="stat-card"><div class="stat-num" id="totalCategories">0</div><div class="stat-label">Categories</div></div>
+        <div class="stat-card"><div class="stat-num" id="totalOrders">0</div><div class="stat-label">Orders</div></div>
+    </div>
+
+    <!-- MANAGE CATEGORIES -->
+    <div class="admin-section">
+        <h2 class="admin-section-title">🗂 Manage Categories</h2>
+        <div style="display:flex; gap:10px; margin-bottom:12px;">
+            <input type="text" id="newCategoryEmoji" placeholder="Emoji" style="width:80px; padding:10px; border:1.5px solid #d1d5db; border-radius:8px; font-size:16px; text-align:center;">
+            <input type="text" id="newCategoryName" placeholder="Category name (e.g. School Bags)" style="flex:1; padding:10px 12px; border:1.5px solid #d1d5db; border-radius:8px; font-size:14px; font-family:inherit;">
+            <button onclick="addCategory()" style="background:#1e3a8a; color:white; border:none; padding:10px 18px; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap;">+ Add</button>
+        </div>
+        <div id="categoriesList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+    </div>
+
+    <!-- ADD PRODUCT FORM -->
+    <div class="admin-section">
+        <h2 class="admin-section-title">➕ Add New Product</h2>
+        <div class="admin-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Product Name *</label>
+                    <input type="text" id="pName" placeholder="e.g. Color Pencils">
+                </div>
+                <div class="form-group">
+                    <label>Category *</label>
+                    <select id="pCategory"></select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Our Price (₹) *</label>
+                    <input type="number" id="pPrice" placeholder="e.g. 60">
+                </div>
+                <div class="form-group">
+                    <label>Original Price (₹) *</label>
+                    <input type="number" id="pOrigPrice" placeholder="e.g. 100">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Product Description</label>
+                <textarea id="pDesc" placeholder="e.g. 12 color pencils, smooth finish..." rows="2" style="width:100%; padding:10px 12px; border:1.5px solid #d1d5db; border-radius:8px; font-size:14px; font-family:inherit; resize:none; outline:none;"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Product Image *</label>
+                <div class="image-upload-box">
+                    <div class="image-tabs">
+                        <button type="button" class="img-tab active" id="tabUrlBtn" onclick="switchTab('url')">🔗 Image URL</button>
+                        <button type="button" class="img-tab" id="tabFileBtn" onclick="switchTab('file')">📁 Upload File</button>
+                    </div>
+                    <div id="urlTab">
+                        <input type="text" id="pImageUrl" placeholder="Paste image URL" oninput="previewFromUrl(this.value)">
+                        <small style="color:#9ca3af; font-size:12px;">Right click any image → Copy image address → Paste here</small>
+                    </div>
+                    <div id="fileTab" style="display:none;">
+                        <input type="file" id="pImageFile" accept="image/*" onchange="previewFile(this)">
+                        <small style="color:#9ca3af; font-size:12px;">Select image from your computer</small>
+                    </div>
+                    <div id="imagePreview" style="display:none; margin-top:10px; align-items:center; gap:10px;">
+                        <img id="previewImg" style="width:80px; height:80px; object-fit:contain; border-radius:8px; border:1.5px solid #e5e7eb; background:#f8fafc;">
+                        <span style="font-size:13px; color:#16a34a; font-weight:600;">✅ Image ready!</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Stock Status</label>
+                <select id="pStock">
+                    <option value="true">✅ In Stock</option>
+                    <option value="false">❌ Out of Stock</option>
+                </select>
+            </div>
+            <button class="admin-add-btn" id="addBtn" onclick="addProduct()">➕ Add Product</button>
+        </div>
+    </div>
+
+    <!-- PRODUCT LIST -->
+    <div class="admin-section">
+        <h2 class="admin-section-title">📦 All Products</h2>
+        <div id="adminProductList"><p style="text-align:center; color:#9ca3af; padding:20px;">Loading... ⏳</p></div>
+    </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div id="editModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:white; border-radius:16px; padding:24px; width:100%; max-width:420px; max-height:90vh; overflow-y:auto;">
+        <h3 style="font-size:17px; font-weight:700; color:#1e3a8a; margin-bottom:16px;">✏️ Edit Product</h3>
+        <div class="form-group"><label>Product Name</label><input type="text" id="editName" class="checkout-input"></div>
+        <div class="form-group">
+            <label>Category</label>
+            <select id="editCategory" class="checkout-input"></select>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Our Price (₹)</label><input type="number" id="editPrice" class="checkout-input"></div>
+            <div class="form-group"><label>Original Price (₹)</label><input type="number" id="editOrigPrice" class="checkout-input"></div>
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea id="editDesc" class="checkout-input" rows="2" style="resize:none;"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Image (URL or Upload)</label>
+            <input type="text" id="editImage" class="checkout-input" placeholder="Image URL">
+            <input type="file" id="editImageFile" accept="image/*" style="margin-top:8px; width:100%;" onchange="previewEditFile(this)">
+            <img id="editPreviewImg" style="width:70px; height:70px; object-fit:contain; border-radius:8px; border:1.5px solid #e5e7eb; margin-top:8px; background:#f8fafc;">
+        </div>
+        <div class="form-group">
+            <label>Stock</label>
+            <select id="editStock" class="checkout-input">
+                <option value="true">✅ In Stock</option>
+                <option value="false">❌ Out of Stock</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:16px;">
+            <button onclick="saveEdit()" style="flex:1; background:#1e3a8a; color:white; border:none; padding:13px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer;">Save Changes</button>
+            <button onclick="closeEdit()" style="flex:1; background:transparent; color:#6b7280; border:1.5px solid #d1d5db; padding:13px; border-radius:10px; font-size:15px; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:white; border-radius:16px; padding:28px 20px; width:100%; max-width:360px; text-align:center;">
+        <div style="font-size:44px; margin-bottom:12px;" id="confirmIcon"></div>
+        <h3 id="confirmTitle" style="font-size:17px; font-weight:700; color:#1e3a8a; margin-bottom:8px;"></h3>
+        <p id="confirmMsg" style="font-size:14px; color:#6b7280; margin-bottom:24px;"></p>
+        <div style="display:flex; gap:12px;">
+            <button id="confirmYesBtn" style="flex:1; background:#ef4444; color:white; border:none; padding:13px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer;">Yes</button>
+            <button onclick="closeConfirm()" style="flex:1; background:transparent; color:#6b7280; border:1.5px solid #d1d5db; padding:13px; border-radius:10px; font-size:15px; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+    getFirestore, collection, addDoc, updateDoc, deleteDoc,
+    doc, onSnapshot, setDoc, query, where, getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ─────────────────────────────────────────────
+// YOUR FIREBASE CONFIG — same as before
+// ─────────────────────────────────────────────
+const firebaseConfig = {
+    apiKey: "AIzaSyBNzmn50gpDY6ww3oAGnNnhs_cqGKmVhCk",
+    authDomain: "chiragstationary-ba728.firebaseapp.com",
+    projectId: "chiragstationary-ba728",
+    storageBucket: "chiragstationary-ba728.firebasestorage.app",
+    messagingSenderId: "647593953948",
+    appId: "1:647593953948:web:b121ee278cd880e306bb59"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ─────────────────────────────────────────────
+// MULTI-TENANT CORE
+// shopId = which shop this admin manages
+// Read from: URL param → sessionStorage → prompt
+//
+// Firestore structure:
+//   /shops/{shopId}/products/{productId}
+//   /shops/{shopId}/categories/{catId}
+//   /shops/{shopId}  ← shop doc (name, plan, password hash)
+// ─────────────────────────────────────────────
+
+let SHOP_ID = null;
+let SHOP_DOC = null;
+let unsubProducts = null;
+let unsubCategories = null;
+
+let allCategories = [];
+
+// ── Get shopId from URL ?shop=xxx or sessionStorage ──
+function getShopIdFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("shop") || null;
+}
+
+// ── Collection helpers scoped to this shop ──
+function productsCol() { return collection(db, "shops", SHOP_ID, "products"); }
+function categoriesCol() { return collection(db, "shops", SHOP_ID, "categories"); }
+function shopDocRef() { return doc(db, "shops", SHOP_ID); }
+
+// ─────────────────────────────────────────────
+// AUTH
+// ─────────────────────────────────────────────
+
+window.toggleAdminPass = function() {
+    const input = document.getElementById("adminPass");
+    const btn   = document.getElementById("togglePassBtn");
+    if (input.type === "password") { input.type = "text";     btn.textContent = "🙈"; }
+    else                           { input.type = "password"; btn.textContent = "👁"; }
+};
+
+window.adminLogin = async function() {
+    const shopId = document.getElementById("loginShopId").value.trim().toLowerCase().replace(/\s+/g, "_");
+    const pass = document.getElementById("adminPass").value;
+    const errEl = document.getElementById("loginError");
+    errEl.style.display = "none";
+
+    if (!shopId) { showLoginError("Please enter your Shop ID."); return; }
+    if (!pass)   { showLoginError("Please enter password."); return; }
+
+    try {
+        // Check shop exists and password matches in Firestore
+        const shopSnap = await getDoc(doc(db, "shops", shopId));
+        if (!shopSnap.exists()) {
+            showLoginError("Shop not found. Check your Shop ID."); return;
+        }
+        const shopData = shopSnap.data();
+        if (shopData.adminPassword !== pass) {
+            showLoginError("Wrong password."); return;
+        }
+        // Success
+        SHOP_ID = shopId;
+        SHOP_DOC = shopData;
+        sessionStorage.setItem("adminShopId", SHOP_ID);
+        sessionStorage.setItem("adminShopData", JSON.stringify(shopData));
+        showDashboard();
+    } catch(e) {
+        showLoginError("Error: " + e.message);
+    }
+};
+
+function showLoginError(msg) {
+    const el = document.getElementById("loginError");
+    el.textContent = msg;
+    el.style.display = "block";
+}
+
+window.adminLogout = function() {
+    sessionStorage.removeItem("adminShopId");
+    sessionStorage.removeItem("adminShopData");
+    // Unsubscribe live listeners
+    if (unsubProducts) unsubProducts();
+    if (unsubCategories) unsubCategories();
+    window.location.reload();
+};
+
+// ── On page load: check if already logged in ──
+window.addEventListener("DOMContentLoaded", async function() {
+    // Try URL param first (for super admin linking directly)
+    const urlShop = getShopIdFromUrl();
+    const sessShop = sessionStorage.getItem("adminShopId");
+
+    if (urlShop || sessShop) {
+        SHOP_ID = urlShop || sessShop;
+        try {
+            const stored = sessionStorage.getItem("adminShopData");
+            SHOP_DOC = stored ? JSON.parse(stored) : (await getDoc(shopDocRef())).data();
+            showDashboard();
+        } catch(e) {
+            // If anything fails, show login
+        }
+    }
+});
+
+// ─────────────────────────────────────────────
+// DASHBOARD
+// ─────────────────────────────────────────────
+
+function showDashboard() {
+    document.getElementById("adminLoginPage").style.display = "none";
+    document.getElementById("adminDashboard").style.display = "block";
+
+    const shopName = SHOP_DOC?.name || SHOP_ID;
+    const plan = SHOP_DOC?.plan || "Free";
+
+    document.getElementById("headerShopName").textContent = shopName + " — Admin";
+    document.getElementById("badgeShopName").textContent = shopName;
+    document.getElementById("badgePlan").textContent = plan;
+    document.title = "Admin — " + shopName;
+
+    // Orders count from localStorage (keyed by shopId)
+    try {
+        const key = "orderHistory_" + SHOP_ID;
+        const h = localStorage.getItem(key);
+        if (h) document.getElementById("totalOrders").textContent = JSON.parse(h).length;
+    } catch(e) {}
+
+    loadCategories();
+    loadProducts();
+}
+
+function showSync(msg, ok) {
+    const el = document.getElementById("syncStatus");
+    el.textContent = msg;
+    el.style.display = "block";
+    el.style.background = ok ? "#dcfce7" : "#fee2e2";
+    el.style.color = ok ? "#15803d" : "#ef4444";
+    setTimeout(function() { el.style.display = "none"; }, 4000);
+}
+
+// ─────────────────────────────────────────────
+// CATEGORIES  (scoped to shop)
+// ─────────────────────────────────────────────
+
+function loadCategories() {
+    if (unsubCategories) unsubCategories();
+    unsubCategories = onSnapshot(categoriesCol(), function(snapshot) {
+        allCategories = [];
+        snapshot.forEach(function(d) { allCategories.push({ id: d.id, ...d.data() }); });
+
+        // Seed defaults if shop has no categories yet
+        if (allCategories.length === 0) {
+            const defaults = [
+                { emoji: "🎨", name: "Art Supplies" },
+                { emoji: "📚", name: "Exam Essentials" },
+                { emoji: "🧸", name: "Toys" },
+                { emoji: "✏️", name: "Stationery" },
+                { emoji: "📦", name: "Other" }
+            ];
+            defaults.forEach(function(cat) {
+                const id = cat.name.toLowerCase().replace(/\s+/g, "_");
+                setDoc(doc(db, "shops", SHOP_ID, "categories", id), cat).catch(function(){});
+            });
+        }
+
+        renderCategories();
+        renderCategoryDropdowns();
+        document.getElementById("totalCategories").textContent = allCategories.length;
+    });
+}
+
+function renderCategories() {
+    const container = document.getElementById("categoriesList");
+    let html = "";
+    allCategories.forEach(function(cat) {
+        html += '<div style="display:flex; align-items:center; gap:6px; background:#f0f4f8; padding:8px 12px; border-radius:20px; border:1.5px solid #e5e7eb;">' +
+            '<span style="font-size:16px;">' + cat.emoji + '</span>' +
+            '<span style="font-size:13px; font-weight:600; color:#374151;">' + cat.name + '</span>' +
+            '<button onclick="deleteCategory(\'' + cat.id + '\')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px; padding:0 2px;">✕</button>' +
+        '</div>';
+    });
+    container.innerHTML = html || '<p style="color:#9ca3af; font-size:13px;">No categories yet.</p>';
+}
+
+function renderCategoryDropdowns() {
+    ["pCategory", "editCategory"].forEach(function(id) {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = allCategories.map(function(cat) {
+            return '<option value="' + cat.name + '">' + cat.emoji + ' ' + cat.name + '</option>';
+        }).join("");
+        if (current) sel.value = current;
+    });
+}
+
+window.addCategory = async function() {
+    const emoji = document.getElementById("newCategoryEmoji").value.trim() || "📦";
+    const name = document.getElementById("newCategoryName").value.trim();
+    if (!name) { alert("Please enter a category name!"); return; }
+    const id = name.toLowerCase().replace(/\s+/g, "_") + "_" + Date.now();
+    try {
+        // Scoped to this shop only
+        await setDoc(doc(db, "shops", SHOP_ID, "categories", id), { emoji, name });
+        document.getElementById("newCategoryEmoji").value = "";
+        document.getElementById("newCategoryName").value = "";
+        showSync("✅ Category added!", true);
+    } catch(e) { showSync("❌ " + e.message, false); }
+};
+
+window.deleteCategory = function(id) {
+    showConfirm("🗑", "Delete Category?", "This category will be removed.", async function() {
+        await deleteDoc(doc(db, "shops", SHOP_ID, "categories", id));
+        showSync("Category deleted!", true);
+    });
+};
+
+// ─────────────────────────────────────────────
+// PRODUCTS  (scoped to shop)
+// ─────────────────────────────────────────────
+
+function loadProducts() {
+    if (unsubProducts) unsubProducts();
+    unsubProducts = onSnapshot(productsCol(), function(snapshot) {
+        const products = [];
+        snapshot.forEach(function(d) { products.push({ fid: d.id, ...d.data() }); });
+        document.getElementById("totalProducts").textContent = products.length;
+        renderProducts(products);
+    });
+}
+
+window.addProduct = async function() {
+    const name     = document.getElementById("pName").value.trim();
+    const category = document.getElementById("pCategory").value;
+    const price    = parseInt(document.getElementById("pPrice").value);
+    const origPrice= parseInt(document.getElementById("pOrigPrice").value);
+    const desc     = document.getElementById("pDesc").value.trim();
+    const stock    = document.getElementById("pStock").value === "true";
+
+    if (!name)  { alert("Please enter product name!"); return; }
+    if (!price || !origPrice) { alert("Please enter prices!"); return; }
+    if (origPrice <= price)   { alert("Original price must be higher than our price!"); return; }
+
+    const btn = document.getElementById("addBtn");
+    btn.textContent = "⏳ Adding...";
+    btn.disabled = true;
+
+    try {
+        const image = await getFinalImage("pImageFile", "pImageUrl");
+        if (!image) { alert("Please add an image!"); btn.textContent = "➕ Add Product"; btn.disabled = false; return; }
+
+        // ✅ Stored under shops/{shopId}/products — completely isolated
+        await addDoc(productsCol(), {
+            name, category, price, origPrice, image, desc, stock,
+            shopId: SHOP_ID,          // redundant but useful for queries
+            createdAt: Date.now()
+        });
+
+        // Reset form
+        ["pName","pPrice","pOrigPrice","pDesc","pImageUrl"].forEach(function(id) {
+            document.getElementById(id).value = "";
+        });
+        document.getElementById("pImageFile").value = "";
+        document.getElementById("imagePreview").style.display = "none";
+        showSync("✅ Product added!", true);
+    } catch(e) { showSync("❌ Error: " + e.message, false); }
+
+    btn.textContent = "➕ Add Product";
+    btn.disabled = false;
+};
+
+// ─────────────────────────────────────────────
+// RENDER PRODUCTS
+// ─────────────────────────────────────────────
+
+function renderProducts(products) {
+    const container = document.getElementById("adminProductList");
+    if (products.length === 0) {
+        container.innerHTML = "<p style='text-align:center; color:#9ca3af; padding:30px;'>No products yet! Add your first product above.</p>";
+        return;
+    }
+
+    const grouped = {};
+    products.forEach(function(p) {
+        if (!grouped[p.category]) grouped[p.category] = [];
+        grouped[p.category].push(p);
+    });
+
+    let html = "";
+    for (const cat in grouped) {
+        const catObj = allCategories.find(function(c) { return c.name === cat; });
+        const emoji = catObj ? catObj.emoji : "📦";
+        html += "<h3 class='category-title'>" + emoji + " " + cat + "</h3><div class='admin-product-grid'>";
+        grouped[cat].forEach(function(p) {
+            const save = p.origPrice - p.price;
+            html += "<div class='admin-product-card'>" +
+                "<img src='" + p.image + "' class='admin-product-img' onerror=\"this.src='https://placehold.co/65x65?text=📦'\">" +
+                "<div class='admin-product-info'>" +
+                    "<div class='admin-product-name'>" + p.name + "</div>" +
+                    (p.desc ? "<div style='font-size:11px; color:#6b7280; margin:2px 0;'>" + p.desc.substring(0, 40) + "...</div>" : "") +
+                    "<div class='price-box' style='align-items:flex-start;'>" +
+                        "<span class='orig-price'>₹" + p.origPrice + "</span>" +
+                        "<span class='our-price'>₹" + p.price + "</span>" +
+                        "<span class='save-badge'>💰 Save ₹" + save + "</span>" +
+                    "</div>" +
+                    "<span class='" + (p.stock ? "stock-in" : "stock-out") + "'>" + (p.stock ? "✅ In Stock" : "❌ Out of Stock") + "</span>" +
+                "</div>" +
+                "<div class='admin-product-actions'>" +
+                    "<button class='admin-edit-btn' data-fid='" + p.fid + "'>✏️</button>" +
+                    "<button class='admin-delete-btn' data-fid='" + p.fid + "'>🗑</button>" +
+                    "<button class='admin-stock-btn' data-fid='" + p.fid + "' data-stock='" + p.stock + "'>" + (p.stock ? "❌ OOS" : "✅ Back") + "</button>" +
+                "</div>" +
+            "</div>";
+        });
+        html += "</div>";
+    }
+    container.innerHTML = html;
+
+    container.querySelectorAll(".admin-edit-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            const fid = this.getAttribute("data-fid");
+            const p = products.find(function(x) { return x.fid === fid; });
+            if (p) openEdit(p);
+        });
+    });
+    container.querySelectorAll(".admin-delete-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            const fid = this.getAttribute("data-fid");
+            showConfirm("🗑", "Delete Product?", "This will be permanently deleted.", async function() {
+                await deleteDoc(doc(db, "shops", SHOP_ID, "products", fid));
+                showSync("🗑 Product deleted!", true);
+            });
+        });
+    });
+    container.querySelectorAll(".admin-stock-btn").forEach(function(btn) {
+        btn.addEventListener("click", async function() {
+            const fid = this.getAttribute("data-fid");
+            const cur = this.getAttribute("data-stock") === "true";
+            await updateDoc(doc(db, "shops", SHOP_ID, "products", fid), { stock: !cur });
+            showSync("✅ Stock updated!", true);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────
+// EDIT MODAL
+// ─────────────────────────────────────────────
+
+let currentEditId = null;
+
+function openEdit(p) {
+    currentEditId = p.fid;
+    document.getElementById("editName").value = p.name;
+    document.getElementById("editCategory").value = p.category;
+    document.getElementById("editPrice").value = p.price;
+    document.getElementById("editOrigPrice").value = p.origPrice;
+    document.getElementById("editDesc").value = p.desc || "";
+    document.getElementById("editImage").value = p.image.startsWith("data:") ? "" : p.image;
+    document.getElementById("editPreviewImg").src = p.image;
+    document.getElementById("editStock").value = p.stock ? "true" : "false";
+    document.getElementById("editModal").style.display = "flex";
+}
+
+window.closeEdit = function() { document.getElementById("editModal").style.display = "none"; };
+
+window.saveEdit = async function() {
+    if (!currentEditId) return;
+    let image = await getFinalImage("editImageFile", "editImage");
+    if (!image) image = document.getElementById("editPreviewImg").src;
+    await updateDoc(doc(db, "shops", SHOP_ID, "products", currentEditId), {
+        name:     document.getElementById("editName").value.trim(),
+        category: document.getElementById("editCategory").value,
+        price:    parseInt(document.getElementById("editPrice").value),
+        origPrice:parseInt(document.getElementById("editOrigPrice").value),
+        desc:     document.getElementById("editDesc").value.trim(),
+        image,
+        stock:    document.getElementById("editStock").value === "true"
+    });
+    closeEdit();
+    showSync("✅ Updated!", true);
+};
+
+// ─────────────────────────────────────────────
+// IMAGE HELPERS
+// ─────────────────────────────────────────────
+
+window.switchTab = function(tab) {
+    if (tab === "url") {
+        document.getElementById("urlTab").style.display = "block";
+        document.getElementById("fileTab").style.display = "none";
+        document.getElementById("tabUrlBtn").classList.add("active");
+        document.getElementById("tabFileBtn").classList.remove("active");
+    } else {
+        document.getElementById("urlTab").style.display = "none";
+        document.getElementById("fileTab").style.display = "block";
+        document.getElementById("tabUrlBtn").classList.remove("active");
+        document.getElementById("tabFileBtn").classList.add("active");
+    }
+};
+
+window.previewFromUrl = function(url) {
+    if (url.trim()) {
+        document.getElementById("previewImg").src = url.trim();
+        document.getElementById("imagePreview").style.display = "flex";
+    }
+};
+
+window.previewFile = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById("previewImg").src = e.target.result;
+            document.getElementById("imagePreview").style.display = "flex";
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+};
+
+window.previewEditFile = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) { document.getElementById("editPreviewImg").src = e.target.result; };
+        reader.readAsDataURL(input.files[0]);
+    }
+};
+
+function getBase64(file) {
+    return new Promise(function(resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function(e) { resolve(e.target.result); };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function getFinalImage(fileInputId, urlInputId) {
+    const fileInput = document.getElementById(fileInputId);
+    if (fileInput && fileInput.files && fileInput.files.length > 0) return await getBase64(fileInput.files[0]);
+    const urlInput = document.getElementById(urlInputId);
+    if (urlInput && urlInput.value.trim()) return urlInput.value.trim();
+    return null;
+}
+
+// ─────────────────────────────────────────────
+// CONFIRM MODAL
+// ─────────────────────────────────────────────
+
+function showConfirm(icon, title, msg, onYes) {
+    document.getElementById("confirmIcon").textContent = icon;
+    document.getElementById("confirmTitle").textContent = title;
+    document.getElementById("confirmMsg").textContent = msg;
+    document.getElementById("confirmModal").style.display = "flex";
+    document.getElementById("confirmYesBtn").onclick = function() { closeConfirm(); onYes(); };
+}
+window.closeConfirm = function() { document.getElementById("confirmModal").style.display = "none"; };
+</script>
+</body>
+</html>

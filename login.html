@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="login-page">
+    <div class="login-card">
+
+        <img id="loginLogo" src="logochirag.png" class="login-logo" alt="Logo">
+        <h1 class="login-title" id="loginShopName">Shop</h1>
+        <p class="login-sub" id="loginSubtitle">Welcome 👋</p>
+
+        <div class="login-form">
+            <label>Your Name</label>
+            <input type="text" id="loginName" placeholder="Enter your name">
+
+            <label>Phone Number</label>
+            <div class="phone-input">
+                <span>+91</span>
+                <input type="tel" id="loginPhone" maxlength="10" placeholder="10-digit mobile number">
+            </div>
+
+            <label>Delivery Address</label>
+            <textarea id="loginAddress" rows="3" placeholder="Flat, Building, Area"></textarea>
+
+            <button class="login-btn" onclick="doLogin()">Continue →</button>
+        </div>
+
+        <p class="login-note">Your information stays only on your device.</p>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBNzmn50gpDY6ww3oAGnNnhs_cqGKmVhCk",
+    authDomain: "chiragstationary-ba728.firebaseapp.com",
+    projectId: "chiragstationary-ba728",
+    storageBucket: "chiragstationary-ba728.firebasestorage.app",
+    messagingSenderId: "647593953948",
+    appId: "1:647593953948:web:b121ee278cd880e306bb59"
+};
+
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+const params  = new URLSearchParams(window.location.search);
+const SHOP_ID = params.get("shop") || "chirag_stationary";
+const USER_KEY = "user_" + SHOP_ID;
+
+window.addEventListener("DOMContentLoaded", async function() {
+    if (localStorage.getItem(USER_KEY)) {
+        window.location.href = "index.html?shop=" + SHOP_ID;
+        return;
+    }
+    await loadShopMeta();
+});
+
+async function loadShopMeta() {
+    try {
+        const snap = await getDoc(doc(db, "shops", SHOP_ID));
+        if (!snap.exists()) return;
+        const s = snap.data();
+        document.title = (s.name || "Shop") + " — Login";
+        document.getElementById("loginShopName").textContent = s.name || "Shop";
+        document.getElementById("loginSubtitle").textContent = s.tagline || "Welcome 👋";
+        if (s.logo) document.getElementById("loginLogo").src = s.logo;
+    } catch(e) {
+        console.warn("Shop meta load failed:", e);
+    }
+}
+
+window.doLogin = function() {
+    const name    = document.getElementById("loginName").value.trim();
+    const phone   = document.getElementById("loginPhone").value.trim();
+    const address = document.getElementById("loginAddress").value.trim();
+
+    if (!name)                               { alert("Enter your name");            return; }
+    if (phone.length !== 10 || isNaN(phone)) { alert("Enter valid 10-digit phone"); return; }
+    if (!address)                            { alert("Enter delivery address");      return; }
+
+    localStorage.setItem(USER_KEY, JSON.stringify({ name, phone, address }));
+    window.location.href = "index.html?shop=" + SHOP_ID;
+};
+</script>
+
+</body>
+</html>
