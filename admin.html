@@ -29,7 +29,7 @@
             <label>Admin Password</label>
             <div style="position:relative;">
                 <input type="password" id="adminPass" placeholder="Enter password" style="width:100%; padding-right:44px;">
-                <button type="button" onclick="toggleAdminPass()" id="togglePassBtn" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:18px; color:#6b7280;">👁</button>
+                <button type="button" onclick="toggleAdminPass()" id="togglePassBtn" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:12px; color:#6b7280; font-weight:600;">Show</button>
             </div>
             <div id="loginError" style="display:none; color:#ef4444; font-size:13px; margin-top:6px;"></div>
             <button class="login-btn" onclick="adminLogin()">Login →</button>
@@ -240,8 +240,8 @@ function shopDocRef() { return doc(db, "shops", SHOP_ID); }
 window.toggleAdminPass = function() {
     const input = document.getElementById("adminPass");
     const btn   = document.getElementById("togglePassBtn");
-    if (input.type === "password") { input.type = "text";     btn.textContent = "🙈"; }
-    else                           { input.type = "password"; btn.textContent = "👁"; }
+    if (input.type === "password") { input.type = "text";     btn.textContent = "Hide"; }
+    else                           { input.type = "password"; btn.textContent = "Show"; }
 };
 
 window.adminLogin = async function() {
