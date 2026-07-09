@@ -16,15 +16,11 @@ body {
     box-shadow: 0 3px 12px rgba(0,0,0,0.2);
 }
 .header-section h1 {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     white-space: nowrap;
-    max-width: 90px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex-shrink: 1;
+    flex-shrink: 0;
 }
-
 /* Search bar — takes remaining space */
 .header-search {
     flex: 1;
