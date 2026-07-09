@@ -27,9 +27,15 @@ body {
 
 /* Search bar — takes remaining space */
 .header-search {
-    flex: 1; display: flex; align-items: center;
-    background: #fff; border-radius: 24px;
-    padding: 7px 10px; gap: 6px; min-width: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 24px;
+    padding: 7px 10px;
+    gap: 6px;
+    min-width: 0;
+    margin: 0 6px;
 }
 .header-search input {
     flex: 1; border: none; outline: none;
