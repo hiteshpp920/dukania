@@ -9,7 +9,7 @@
 <body>
 
 <div class="header-section">
-    <img id="shopLogo" src="logochirag.png" class="logo" alt="Logo">
+    <img id="shopLogo" src="logochirag.png" class="logo" alt="Logo" style="width:36px;height:36px;object-fit:contain;border-radius:6px;flex-shrink:0;">
     <h1>My Orders</h1>
     <div style="margin-left:auto; display:flex; gap:10px; align-items:center;">
         <a id="homeLink" href="index.html" class="header-link">🏠 Shop</a>
@@ -99,7 +99,14 @@ async function loadShopMeta() {
         SHOP_PHONE = s.phone || "";
         SHOP_NAME  = s.name  || "Shop";
         document.title = "My Orders — " + SHOP_NAME;
-        if (s.logo) document.getElementById("shopLogo").src = s.logo;
+        if (s.logo) {
+            const logoEl = document.getElementById("shopLogo");
+            logoEl.src = s.logo;
+            logoEl.style.width = "36px";
+            logoEl.style.height = "36px";
+            logoEl.style.objectFit = "contain";
+            logoEl.style.flexShrink = "0";
+        }
         document.getElementById("footerAddress").textContent = "📍 " + SHOP_NAME + (s.address ? " • " + s.address : "");
         if (s.phone) {
             document.getElementById("footerPhone").innerHTML = '📞 <a href="tel:+91' + s.phone + '">+91 ' + s.phone + '</a>';
