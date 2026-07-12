@@ -96,22 +96,13 @@
             <div class="form-group">
                 <label>Product Image *</label>
                 <div class="image-upload-box">
-                    <div class="image-tabs">
-                        <button type="button" class="img-tab active" id="tabUrlBtn" onclick="switchTab('url')">🔗 Image URL</button>
-                        <button type="button" class="img-tab" id="tabFileBtn" onclick="switchTab('file')">📁 Upload File</button>
+                    <small style="color:#6b7280; font-size:12px; display:block; margin-bottom:8px;">📸 Add up to 3 image URLs (pehla main image hai)</small>
+                    <div id="multiImageInputs">
+                        <input type="text" class="multi-img-url" placeholder="Image URL 1 (main) *" oninput="previewMultiImg()" style="width:100%; padding:8px 10px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; outline:none; margin-bottom:6px;">
+                        <input type="text" class="multi-img-url" placeholder="Image URL 2 (optional)" oninput="previewMultiImg()" style="width:100%; padding:8px 10px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; outline:none; margin-bottom:6px;">
+                        <input type="text" class="multi-img-url" placeholder="Image URL 3 (optional)" oninput="previewMultiImg()" style="width:100%; padding:8px 10px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; outline:none;">
                     </div>
-                    <div id="urlTab">
-                        <input type="text" id="pImageUrl" placeholder="Paste image URL" oninput="previewFromUrl(this.value)">
-                        <small style="color:#9ca3af; font-size:12px;">Right click any image → Copy image address → Paste here</small>
-                    </div>
-                    <div id="fileTab" style="display:none;">
-                        <input type="file" id="pImageFile" accept="image/*" onchange="previewFile(this)">
-                        <small style="color:#9ca3af; font-size:12px;">Select image from your computer</small>
-                    </div>
-                    <div id="imagePreview" style="display:none; margin-top:10px; align-items:center; gap:10px;">
-                        <img id="previewImg" style="width:80px; height:80px; object-fit:contain; border-radius:8px; border:1.5px solid #e5e7eb; background:#f8fafc;">
-                        <span style="font-size:13px; color:#16a34a; font-weight:600;">✅ Image ready!</span>
-                    </div>
+                    <div id="imagePreview" style="display:none; margin-top:10px; gap:8px; flex-wrap:wrap;"></div>
                 </div>
             </div>
             <div class="form-group">
@@ -451,21 +442,23 @@ window.addProduct = async function() {
     btn.disabled = true;
 
     try {
-        const image = await getFinalImage("pImageFile", "pImageUrl");
-        if (!image) { alert("Please add an image!"); btn.textContent = "➕ Add Product"; btn.disabled = false; return; }
+        const imgInputs = document.querySelectorAll(".multi-img-url");
+        const images = Array.from(imgInputs).map(function(i) { return i.value.trim(); }).filter(Boolean);
+        if (images.length === 0) { alert("Please add at least one image URL!"); btn.textContent = "➕ Add Product"; btn.disabled = false; return; }
 
-        // ✅ Stored under shops/{shopId}/products — completely isolated
         await addDoc(productsCol(), {
-            name, category, price, origPrice, image, desc, stock,
-            shopId: SHOP_ID,          // redundant but useful for queries
+            name, category, price, origPrice,
+            image: images[0],
+            images: images,
+            desc, stock,
+            shopId: SHOP_ID,
             createdAt: Date.now()
         });
 
-        // Reset form
-        ["pName","pPrice","pOrigPrice","pDesc","pImageUrl"].forEach(function(id) {
+        ["pName","pPrice","pOrigPrice","pDesc"].forEach(function(id) {
             document.getElementById(id).value = "";
         });
-        document.getElementById("pImageFile").value = "";
+        document.querySelectorAll(".multi-img-url").forEach(function(i) { i.value = ""; });
         document.getElementById("imagePreview").style.display = "none";
         showSync("✅ Product added!", true);
     } catch(e) { showSync("❌ Error: " + e.message, false); }
@@ -601,6 +594,17 @@ window.switchTab = function(tab) {
         document.getElementById("tabUrlBtn").classList.remove("active");
         document.getElementById("tabFileBtn").classList.add("active");
     }
+};
+
+window.previewMultiImg = function() {
+    const inputs = document.querySelectorAll(".multi-img-url");
+    const urls = Array.from(inputs).map(function(i) { return i.value.trim(); }).filter(Boolean);
+    const preview = document.getElementById("imagePreview");
+    if (urls.length === 0) { preview.style.display = "none"; return; }
+    preview.style.display = "flex";
+    preview.innerHTML = urls.map(function(url) {
+        return '<img src="' + url + '" style="width:70px;height:70px;object-fit:contain;border-radius:8px;border:1.5px solid #e5e7eb;background:#f8fafc;" onerror="this.style.opacity=0.3">';
+    }).join("");
 };
 
 window.previewFromUrl = function(url) {
