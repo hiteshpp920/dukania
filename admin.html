@@ -484,7 +484,7 @@ window.addProduct = async function() {
         document.querySelectorAll(".multi-img-file").forEach(function(i) { i.value = ""; });
         document.getElementById("imagePreview").style.display = "none";
         showSync("✅ Product added!", true);
-    } catch(e) { showSync("❌ Error: " + e.message, false); }
+    } catch(e) { console.error(e); showSync("❌ Error: " + (e.message || e.code || JSON.stringify(e)), false); }
 
     btn.textContent = "➕ Add Product";
     btn.disabled = false;
