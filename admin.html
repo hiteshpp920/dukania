@@ -484,7 +484,7 @@ window.addProduct = async function() {
         document.querySelectorAll(".multi-img-file").forEach(function(i) { i.value = ""; });
         document.getElementById("imagePreview").style.display = "none";
         showSync("✅ Product added!", true);
-    } catch(e) { console.error(e); showSync("❌ Error: " + (e.message || e.code || JSON.stringify(e)), false); }
+    } catch(e) { showSync("❌ Error: " + e.message, false); }
 
     btn.textContent = "➕ Add Product";
     btn.disabled = false;
@@ -684,7 +684,24 @@ window.previewEditFile = function(input) {
 function getBase64(file) {
     return new Promise(function(resolve, reject) {
         const reader = new FileReader();
-        reader.onload = function(e) { resolve(e.target.result); };
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement("canvas");
+                let w = img.width, h = img.height;
+                // Max 500px
+                if (w > 500 || h > 500) {
+                    if (w > h) { h = Math.round(h * 500 / w); w = 500; }
+                    else       { w = Math.round(w * 500 / h); h = 500; }
+                }
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL("image/jpeg", 0.7));
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
